@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Free Time & Horários | Crea-Jr Núcleo Itajubá</title>
+    
+    <!-- Fontes Google -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800;900&family=Segoe+UI:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Ícone Favicon -->
+    <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/Marketingcreajrmgitajuba12/Link-de-acesso-rapido/main/Processo%20Seletivo%202025.2%20-%201.png">
+    
+    <!-- Estilos -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <!-- Formas Flutuantes Animadas no Fundo -->
+    <div class="background-shapes">
+        <div class="blob"></div>
+        <div class="blob"></div>
+        <div class="blob"></div>
+        <div class="blob"></div>
+    </div>
+
+    <!-- Cabeçalho Principal -->
+    <header class="site-header">
+        <div class="header-container">
+            <div class="header-brand">
+                <img src="https://raw.githubusercontent.com/Marketingcreajrmgitajuba12/Link-de-acesso-rapido/main/Processo%20Seletivo%202025.2%20-%201.png" alt="Logo Crea-Jr Itajubá" class="header-logo">
+                <div class="header-titles">
+                    <h1>CREA-JR NÚCLEO ITAJUBÁ</h1>
+                    <p>Painel de Free Time & Agendamento de Reuniões</p>
+                </div>
+            </div>
+            
+            <div class="header-actions">
+                <button class="btn btn-outline btn-sm" id="btnOpenAdminHeader" title="Área Restrita para Editar Membros Ativos">
+                    🔒 Editar Membros Ativos
+                </button>
+                <button class="btn btn-outline btn-sm" id="btnExportJson" title="Fazer download de backup dos horários em JSON">
+                    💾 Exportar Dados
+                </button>
+                <button class="btn btn-outline btn-sm" id="btnImportJson" title="Importar arquivo de backup JSON">
+                    📂 Importar Dados
+                </button>
+                <input type="file" id="inputImportFile" accept=".json" style="display: none;">
+                
+                <button class="btn btn-outline btn-sm" id="btnPrint" title="Imprimir ou Salvar em PDF">
+                    🖨️ Imprimir
+                </button>
+                <button class="btn btn-outline btn-sm" id="btnResetData" title="Restaurar lista original de membros">
+                    🔄 Restaurar Original
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Conteúdo Principal -->
+    <main class="main-wrapper">
+        
+        <!-- Navegação por Abas -->
+        <nav class="tabs-nav">
+            <button class="tab-btn active" data-tab="tab-freetime">
+                ⏱️ Meu Free Time (Individual)
+            </button>
+            <button class="tab-btn" data-tab="tab-reunioes">
+                👥 Agendar Reunião (Match de Horários)
+            </button>
+            <button class="tab-btn" data-tab="tab-heatmap">
+                📊 Mapa de Calor da Equipe
+            </button>
+            <button class="tab-btn" data-tab="tab-membros">
+                📸 Diretório de Membros
+            </button>
+        </nav>
+
+        <!-- ====================================================================
+             ABA 1: MEU FREE TIME (INDIVIDUAL)
+             ==================================================================== -->
+        <section id="tab-freetime" class="tab-content active">
+            
+            <!-- Painel do Membro Selecionado e Controles -->
+            <div class="member-selector-panel">
+                
+                <!-- Card de Perfil -->
+                <div class="member-info-card">
+                    <img id="currentMemberPhoto" src="" alt="Foto do Membro" class="member-avatar-lg">
+                    <h3 id="currentMemberName">Carregando...</h3>
+                    <p id="currentMemberRole" style="font-size: 0.88rem; color: var(--text-muted); margin-top: 2px;">Cargo</p>
+                    <span id="currentMemberDeptBadge" class="member-badge">Diretoria</span>
+
+                    <div class="member-stat-box">
+                        <div class="stat-item">
+                            <div id="currentMemberFreeCount" class="stat-val">0</div>
+                            <div class="stat-lbl">Blocos Livres</div>
+                        </div>
+                        <div class="stat-item">
+                            <div id="currentMemberFreeHours" class="stat-val">0h</div>
+                            <div class="stat-lbl">Tempo Livre Total</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Controles de Edição e Ações Rápidas -->
+                <div class="member-controls-card">
+                    <div>
+                        <label style="display: block; font-size: 0.85rem; font-weight: 700; color: var(--primary-dark); margin-bottom: 6px;">
+                            👤 Selecione o Membro para Visualizar / Editar:
+                        </label>
+                        <div class="control-row">
+                            <div class="search-select-box">
+                                <select id="memberSelect" class="form-select"></select>
+                            </div>
+                            <div class="brush-selector">
+                                <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); margin-left: 6px;">Pincel:</span>
+                                <button type="button" id="brushFree" class="brush-btn active-free">
+                                    🟢 Marcar Livre
+                                </button>
+                                <button type="button" id="brushBusy" class="brush-btn">
+                                    🔴 Marcar Ocupado
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label style="display: block; font-size: 0.82rem; font-weight: 700; color: var(--text-muted); margin-bottom: 6px;">
+                            ⚡ Preenchimento Rápido por Turno:
+                        </label>
+                        <div class="quick-fill-bar">
+                            <button type="button" id="btnFillManha" class="btn btn-outline btn-sm">☀️ Manhã Livre</button>
+                            <button type="button" id="btnFillTarde" class="btn btn-outline btn-sm">🌤️ Tarde Livre</button>
+                            <button type="button" id="btnFillNoite" class="btn btn-outline btn-sm">🌙 Noite Livre</button>
+                            <button type="button" id="btnFillAll" class="btn btn-outline btn-sm">✨ Marcar Tudo</button>
+                            <button type="button" id="btnClearAll" class="btn btn-outline btn-sm" style="color: var(--danger); border-color: #fca5a5;">🗑️ Limpar</button>
+                        </div>
+                    </div>
+
+                    <div style="font-size: 0.82rem; color: var(--text-muted); border-top: 1px solid #f1f5f9; padding-top: 10px;">
+                        <span>💡 <em>Dica: <strong>Clique e arraste o mouse</strong> sobre a grade para pintar vários horários de uma vez só!</em></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Grade de Horários -->
+            <div class="app-card">
+                <div class="card-header">
+                    <div class="card-title-group">
+                        <h2>Grade de Horários da Semana</h2>
+                        <p>Blocos de aula: Manhã (M1-M5), Tarde (T1-T5) e Noite (N1-N5)</p>
+                    </div>
+                </div>
+
+                <div class="schedule-grid-container" id="individualScheduleGrid">
+                    <table class="schedule-table">
+                        <thead>
+                            <tr>
+                                <th class="time-header">Horário / Bloco</th>
+                                <th>Segunda-feira</th>
+                                <th>Terça-feira</th>
+                                <th>Quarta-feira</th>
+                                <th>Quinta-feira</th>
+                                <th>Sexta-feira</th>
+                                <th>Sábado</th>
+                            </tr>
+                        </thead>
+                        <tbody id="individualGridTbody">
+                            <!-- Preenchido via app.js -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ====================================================================
+             ABA 2: AGENDAR REUNIÃO (MATCH DE HORÁRIOS EM COMUM)
+             ==================================================================== -->
+        <section id="tab-reunioes" class="tab-content">
+            
+            <div class="meeting-layout">
+                
+                <!-- Painel de Seleção dos Participantes -->
+                <div class="participants-panel">
+                    <div>
+                        <h3 style="font-family: 'Montserrat', sans-serif; font-size: 1.15rem; color: var(--primary-dark); margin-bottom: 4px;">
+                            👥 Selecionar Participantes
+                        </h3>
+                        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 12px;">
+                            Selecione os membros que devem participar da reunião:
+                        </p>
+
+                        <!-- Filtro por Diretoria Rápido -->
+                        <div class="dept-quick-buttons" id="meetingDeptChips">
+                            <!-- Injetado dinamicamente -->
+                        </div>
+
+                        <!-- Busca -->
+                        <input type="text" id="searchMeetingParticipant" class="form-input" placeholder="🔍 Filtrar por nome ou cargo..." style="margin-bottom: 10px; font-size: 0.85rem; padding: 8px 12px;">
+                    </div>
+
+                    <div style="display: flex; align-items: center; justify-content: space-between; font-size: 0.8rem; font-weight: 700; color: var(--primary);">
+                        <span>Membros do Núcleo:</span>
+                        <span id="selectedParticipantsCount">0 selecionados</span>
+                    </div>
+
+                    <!-- Lista com Checkbox de Membros -->
+                    <div class="participants-list" id="meetingParticipantsList">
+                        <!-- Injetado dinamicamente -->
+                    </div>
+                </div>
+
+                <!-- Painel com a Matriz de Interseção e Sugestões -->
+                <div>
+                    
+                    <!-- Bloco de Melhores Sugestões -->
+                    <div class="app-card" style="margin-bottom: 20px;">
+                        <div class="card-header" style="margin-bottom: 12px;">
+                            <div class="card-title-group">
+                                <h2>🎯 Melhores Horários para Reunião</h2>
+                                <p>Blocos em que 100% dos participantes selecionados estão livres simultaneamente</p>
+                            </div>
+                        </div>
+                        <div id="bestMeetingSlots" class="best-slots-grid">
+                            <!-- Preenchido via app.js -->
+                        </div>
+                    </div>
+
+                    <!-- Grade de Cruzamento de Horários -->
+                    <div class="app-card">
+                        <div class="card-header">
+                            <div class="card-title-group">
+                                <h2>Matriz de Disponibilidade da Reunião</h2>
+                                <p>Clique em qualquer horário para ver a lista de quem está livre e quem está ocupado</p>
+                            </div>
+                        </div>
+
+                        <div class="schedule-grid-container">
+                            <table class="schedule-table">
+                                <thead>
+                                    <tr>
+                                        <th class="time-header">Horário / Bloco</th>
+                                        <th>Segunda-feira</th>
+                                        <th>Terça-feira</th>
+                                        <th>Quarta-feira</th>
+                                        <th>Quinta-feira</th>
+                                        <th>Sexta-feira</th>
+                                        <th>Sábado</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="meetingGridTbody">
+                                    <!-- Preenchido via app.js -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Legenda de Cores -->
+                        <div class="match-legend">
+                            <span style="font-weight: 700; color: var(--text-main); font-size: 0.82rem;">Legenda:</span>
+                            <div class="legend-item">
+                                <div class="legend-color" style="background: #10b981;"></div>
+                                <span>100% Livre (Todos disponíveis)</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color" style="background: #a3e635;"></div>
+                                <span>75%+ Livres</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color" style="background: #fde047;"></div>
+                                <span>50%+ Livres</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color" style="background: #f1f5f9; border: 1px solid #cbd5e1;"></div>
+                                <span>Maioria Ocupada</span>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ====================================================================
+             ABA 3: MAPA DE CALOR DA EQUIPE (HEATMAP)
+             ==================================================================== -->
+        <section id="tab-heatmap" class="tab-content">
+            <div class="app-card">
+                <div class="card-header">
+                    <div class="card-title-group">
+                        <h2>Mapa de Calor Geral da Equipe</h2>
+                        <p>Visualize os momentos com maior concentração de membros disponíveis no núcleo</p>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <label style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted);">Filtrar Área:</label>
+                        <select id="heatmapDeptFilter" class="form-select" style="width: auto; min-width: 200px;">
+                            <option value="todos">Todas as Diretorias</option>
+                            <option value="geral">Coordenação Geral</option>
+                            <option value="financeiro">Financeiro</option>
+                            <option value="marketing">Comunicação e Marketing</option>
+                            <option value="projetos">Projetos e Eventos</option>
+                            <option value="qualidade">Gestão da Qualidade</option>
+                            <option value="ti">Tecnologia da Informação</option>
+                            <option value="documentos">Documentos</option>
+                            <option value="pessoas">Gestão de Pessoas</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="schedule-grid-container">
+                    <table class="schedule-table">
+                        <thead>
+                            <tr>
+                                <th class="time-header">Horário / Bloco</th>
+                                <th>Segunda-feira</th>
+                                <th>Terça-feira</th>
+                                <th>Quarta-feira</th>
+                                <th>Quinta-feira</th>
+                                <th>Sexta-feira</th>
+                                <th>Sábado</th>
+                            </tr>
+                        </thead>
+                        <tbody id="heatmapGridTbody">
+                            <!-- Preenchido via app.js -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ====================================================================
+             ABA 4: DIRETÓRIO DE MEMBROS E FOTOS
+             ==================================================================== -->
+        <section id="tab-membros" class="tab-content">
+            <div class="app-card">
+                <div class="card-header">
+                    <div class="card-title-group">
+                        <h2>Membros do Crea-Jr Núcleo Itajubá</h2>
+                        <p>Fotos, cargos e disponibilidade semanal de toda a equipe</p>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                        <button class="btn btn-primary btn-sm" id="btnOpenAdminDir">
+                            ⚙️ Editar Membros Ativos (Área do Gestor)
+                        </button>
+                        <select id="dirDeptFilter" class="form-select" style="width: auto; min-width: 200px;">
+                            <option value="todos">Todas as Diretorias</option>
+                            <option value="geral">Coordenação Geral</option>
+                            <option value="financeiro">Financeiro</option>
+                            <option value="marketing">Comunicação e Marketing</option>
+                            <option value="projetos">Projetos e Eventos</option>
+                            <option value="qualidade">Gestão da Qualidade</option>
+                            <option value="ti">Tecnologia da Informação</option>
+                            <option value="documentos">Documentos</option>
+                            <option value="pessoas">Gestão de Pessoas</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="membersDirectoryContainer">
+                    <!-- Injetado dinamicamente via app.js -->
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ====================================================================
+         MODAL 1: AUTENTICAÇÃO POR SENHA (PIN DE 6 DÍGITOS)
+         ==================================================================== -->
+    <div id="pinAuthModal" class="modal-overlay" onclick="if(event.target === this) closePinModal()">
+        <div class="modal-box" style="max-width: 420px; text-align: center;">
+            <div class="modal-header" style="justify-content: center; position: relative;">
+                <h3 style="color: var(--primary-dark); font-size: 1.3rem;">🔒 Área Administrativa</h3>
+                <button class="btn-close" style="position: absolute; right: 0;" onclick="closePinModal()">&times;</button>
+            </div>
+            
+            <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 8px;">
+                Digite a senha de <strong>6 dígitos</strong> para gerenciar os membros, cargos e fotos:
+            </p>
+            <p style="font-size: 0.78rem; color: var(--primary); font-weight: 600;">
+                (Senha padrão inicial: <code>123456</code>)
+            </p>
+
+            <form id="pinAuthForm" onsubmit="handlePinSubmit(event)">
+                <div class="pin-input-container" id="pinDigitsContainer">
+                    <input type="password" inputmode="numeric" maxlength="1" class="pin-digit-input" data-index="0" autofocus>
+                    <input type="password" inputmode="numeric" maxlength="1" class="pin-digit-input" data-index="1">
+                    <input type="password" inputmode="numeric" maxlength="1" class="pin-digit-input" data-index="2">
+                    <input type="password" inputmode="numeric" maxlength="1" class="pin-digit-input" data-index="3">
+                    <input type="password" inputmode="numeric" maxlength="1" class="pin-digit-input" data-index="4">
+                    <input type="password" inputmode="numeric" maxlength="1" class="pin-digit-input" data-index="5">
+                </div>
+                <div id="pinErrorMessage" style="color: var(--danger); font-size: 0.82rem; font-weight: 700; height: 20px; margin-bottom: 12px;"></div>
+
+                <div style="display: flex; gap: 10px;">
+                    <button type="button" class="btn btn-outline" style="flex: 1;" onclick="closePinModal()">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" style="flex: 1;">Entrar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ====================================================================
+         MODAL 2: PAINEL DE GESTÃO DE MEMBROS ATIVOS (ADMIN)
+         ==================================================================== -->
+    <div id="adminMembersModal" class="modal-overlay" onclick="if(event.target === this) closeAdminModal()">
+        <div class="modal-box modal-box-lg">
+            <div class="modal-header">
+                <div>
+                    <h3 style="font-size: 1.3rem; color: var(--primary);">⚙️ Gerenciar Membros Ativos do Núcleo</h3>
+                    <p style="font-size: 0.82rem; color: var(--text-muted);">
+                        Adicione, edite cargos/fotos ou remova membros da gestão atual. Todas as alterações sincronizam com o site imediatamente.
+                    </p>
+                </div>
+                <button class="btn-close" onclick="closeAdminModal()">&times;</button>
+            </div>
+
+            <!-- Formulário de Adicionar / Editar Membro -->
+            <div style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 18px; margin-bottom: 24px;">
+                <h4 id="adminFormTitle" style="color: var(--primary-dark); font-size: 1rem; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                    <span>➕ Adicionar Novo Membro</span>
+                </h4>
+                
+                <form id="memberEditForm" onsubmit="handleSaveMemberForm(event)">
+                    <input type="hidden" id="editMemberId" value="">
+                    
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 12px;">
+                        <div>
+                            <label style="font-size: 0.8rem; font-weight: 700; color: var(--text-main);">Nome Completo:</label>
+                            <input type="text" id="formMemberName" class="form-input" placeholder="Ex: Victor de Faria" required>
+                        </div>
+                        <div>
+                            <label style="font-size: 0.8rem; font-weight: 700; color: var(--text-main);">Cargo / Função:</label>
+                            <input type="text" id="formMemberRole" class="form-input" placeholder="Ex: Coordenador de C&M" required>
+                        </div>
+                        <div>
+                            <label style="font-size: 0.8rem; font-weight: 700; color: var(--text-main);">Diretoria / Área:</label>
+                            <select id="formMemberDept" class="form-select" required>
+                                <option value="geral">Coordenação Geral</option>
+                                <option value="financeiro">Financeiro</option>
+                                <option value="marketing">Comunicação e Marketing</option>
+                                <option value="projetos">Projetos e Eventos</option>
+                                <option value="qualidade">Gestão da Qualidade</option>
+                                <option value="ti">Tecnologia da Informação</option>
+                                <option value="documentos">Documentos</option>
+                                <option value="pessoas">Gestão de Pessoas</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Seção de Foto: Upload de Arquivo ou Link -->
+                    <div style="background: #ffffff; border: 1px dashed var(--border-color); border-radius: var(--radius-sm); padding: 12px 16px; margin-bottom: 14px;">
+                        <label style="font-size: 0.82rem; font-weight: 700; color: var(--primary-dark); display: block; margin-bottom: 8px;">
+                            📸 Foto do Membro (Upload do Dispositivo ou Link da Web):
+                        </label>
+                        <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+                            <div style="text-align: center;">
+                                <img id="formPhotoPreview" src="https://raw.githubusercontent.com/Marketingcreajrmgitajuba12/Link-de-acesso-rapido/main/Processo%20Seletivo%202025.2%20-%201.png" alt="Prévia da Foto" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary-light); box-shadow: var(--shadow-sm); display: block; margin: 0 auto;">
+                            </div>
+                            <div style="flex: 1; min-width: 260px; display: flex; flex-direction: column; gap: 8px;">
+                                <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                                    <label class="btn btn-primary btn-sm" style="cursor: pointer; margin: 0;">
+                                        📁 Escolher Foto do Computador/Celular
+                                        <input type="file" id="formMemberPhotoFile" accept="image/*" style="display: none;">
+                                    </label>
+                                    <button type="button" id="btnResetFormPhoto" class="btn btn-outline btn-sm" style="font-size: 0.75rem; padding: 5px 10px;" title="Remover foto e usar avatar padrão">
+                                        Limpar Foto
+                                    </button>
+                                </div>
+                                <div>
+                                    <input type="text" id="formMemberPhoto" class="form-input" placeholder="🔗 Ou cole o link da imagem (https://...)" style="font-size: 0.82rem; padding: 6px 10px;">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; align-items: center; justify-content: flex-end; gap: 10px;">
+                        <button type="button" id="btnCancelEditMember" class="btn btn-outline btn-sm" style="display: none;" onclick="resetMemberForm()">
+                            Cancelar Edição
+                        </button>
+                        <button type="submit" id="btnSaveMember" class="btn btn-success btn-sm">
+                            💾 Salvar Membro
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Lista / Tabela dos Membros Atuais -->
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; gap: 16px; flex-wrap: wrap;">
+                <h4 style="color: var(--primary-dark); font-size: 1.05rem;">
+                    Membros Cadastrados (<span id="adminTotalMembersCount">0</span>)
+                </h4>
+                <input type="text" id="searchAdminMembers" class="form-input" placeholder="🔍 Pesquisar membro..." style="max-width: 260px; font-size: 0.82rem; padding: 6px 10px;">
+            </div>
+
+            <div style="max-height: 320px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: var(--radius-sm);">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Membro</th>
+                            <th>Cargo</th>
+                            <th>Diretoria</th>
+                            <th style="text-align: right;">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminMembersTableBody">
+                        <!-- Injetado via app.js -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Seção de Segurança: Trocar Senha de 6 Dígitos -->
+            <div style="border-top: 1px solid var(--border-color); margin-top: 24px; padding-top: 16px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <label style="font-size: 0.82rem; font-weight: 700; color: var(--text-muted);">Alterar Senha (6 dígitos):</label>
+                    <input type="password" id="newAdminPinInput" maxlength="6" class="form-input" placeholder="Nova senha..." style="width: 130px; font-size: 0.85rem; padding: 6px 10px;">
+                    <button class="btn btn-outline btn-sm" onclick="handleChangePin()">Trocar Senha</button>
+                </div>
+                <div>
+                    <button class="btn btn-primary btn-sm" onclick="closeAdminModal()">Concluir e Fechar</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Modal de Detalhes do Horário (Quem está Livre / Quem está Ocupado) -->
+    <div id="slotDetailModal" class="modal-overlay" onclick="if(event.target === this) closeSlotModal()">
+        <div class="modal-box">
+            <div class="modal-header">
+                <div>
+                    <h3 id="slotModalTitle" style="font-size: 1.15rem; color: var(--primary);">Detalhes do Horário</h3>
+                    <p style="font-size: 0.8rem; color: var(--text-muted);">Disponibilidade dos participantes selecionados</p>
+                </div>
+                <button class="btn-close" onclick="closeSlotModal()">&times;</button>
+            </div>
+
+            <div style="margin-bottom: 16px;">
+                <h4 style="font-size: 0.9rem; color: #065f46; font-weight: 800; margin-bottom: 8px;">
+                    🟢 Membros Livres neste horário:
+                </h4>
+                <ul id="slotModalFreeList" style="list-style: none; padding-left: 0; max-height: 140px; overflow-y: auto;">
+                </ul>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <h4 style="font-size: 0.9rem; color: #991b1b; font-weight: 800; margin-bottom: 8px;">
+                    🔴 Membros Ocupados / Em Aula:
+                </h4>
+                <ul id="slotModalBusyList" style="list-style: none; padding-left: 0; max-height: 140px; overflow-y: auto;">
+                </ul>
+            </div>
+
+            <button class="btn btn-primary" style="width: 100%;" onclick="closeSlotModal()">Fechar</button>
+        </div>
+    </div>
+
+    <!-- Rodapé -->
+    <footer class="site-footer">
+        <div class="footer-inner">
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <img src="https://raw.githubusercontent.com/Marketingcreajrmgitajuba12/Link-de-acesso-rapido/main/Processo%20Seletivo%202025.2%20-%201.png" alt="Logo" class="footer-logo">
+                <div>
+                    <strong style="font-size: 0.9rem; color: var(--primary);">Crea-Jr Núcleo Itajubá</strong>
+                    <p style="font-size: 0.78rem; color: var(--text-muted);">Desenvolvido para organização e agendamento de reuniões da equipe.</p>
+                </div>
+            </div>
+            <p class="footer-text">
+                Grade semanal com blocos organizados por turnos. Dados salvos localmente no seu navegador.
+            </p>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="data.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
