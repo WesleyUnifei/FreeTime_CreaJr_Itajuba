@@ -1252,6 +1252,65 @@ function syncEntireSite() {
 /* ==========================================================================
    10. EXPORTAÇÃO & IMPORTAÇÃO DE DADOS (BACKUP JSON)
    ========================================================================== */
+
+// Exporta um data.js completo e atualizado, pronto para subir no GitHub
+function exportDataJs() {
+    // Serializa os membros preservando freeSlots e fotos (inclusive base64)
+    const membersJs = state.members.map(m => {
+        const slots = m.freeSlots ? JSON.stringify(m.freeSlots) : '[]';
+        const photo = (m.photo || '').replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$\{/g, '\\${');
+        const name  = (m.name  || '').replace(/`/g, '\\`');
+        const role  = (m.role  || '').replace(/`/g, '\\`');
+        return `    {
+        id: '${m.id}',
+        name: \`${name}\`,
+        role: \`${role}\`,
+        department: '${m.department}',
+        photo: \`${photo}\`,
+        email: '',
+        phone: '',
+        freeSlots: ${slots}
+    }`;
+    }).join(',\n');
+
+    // Lê o cabeçalho estático (DAYS, PERIODS, DEPARTMENTS, helpers) do data.js original
+    // e substitui apenas o bloco INITIAL_MEMBERS
+    fetch('data.js')
+        .then(r => r.text())
+        .then(originalContent => {
+            // Substitui o bloco const INITIAL_MEMBERS = [ ... ]; pelo novo
+            const startMarker = '// Membros reais do Crea-Jr Núcleo Itajubá';
+            const idx = originalContent.indexOf(startMarker);
+            let header = idx !== -1 ? originalContent.substring(0, idx) : originalContent;
+
+            // Mantém apenas até o marcador e reconstrói a partir daí
+            const storageIdx = originalContent.indexOf('// Gerenciador do Storage');
+            const footer = storageIdx !== -1 ? originalContent.substring(storageIdx) : '';
+
+            const newContent =
+                header +
+                `// Membros atuais do Crea-Jr Núcleo Itajubá\n` +
+                `const INITIAL_MEMBERS = [\n${membersJs}\n];\n\n` +
+                footer;
+
+            const blob = new Blob([newContent], { type: 'text/javascript;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'data.js';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+            showToast('data.js exportado! Substitua o arquivo no GitHub.');
+        })
+        .catch(() => {
+            // Fallback: exporta apenas os membros como JSON se fetch falhar (segurança de browser)
+            showToast('⚠️ Use o botão "Exportar Backup JSON" e siga as instruções.');
+            alert('Para exportar o data.js, abra o site pelo servidor local ou GitHub Pages.\n\nAlternativamente, use "Exportar Backup JSON" e siga o guia no README para restaurar os dados.');
+        });
+}
+
 function exportDataJson() {
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({
         version: "1.0",

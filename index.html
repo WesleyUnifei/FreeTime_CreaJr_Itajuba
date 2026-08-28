@@ -519,7 +519,10 @@
                     <input type="password" id="newAdminPinInput" maxlength="6" class="form-input" placeholder="Nova senha..." style="width: 130px; font-size: 0.85rem; padding: 6px 10px;">
                     <button class="btn btn-outline btn-sm" onclick="handleChangePin()">Trocar Senha</button>
                 </div>
-                <div>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <button class="btn btn-outline btn-sm" style="border-color: #10b981; color: #065f46;" onclick="exportDataJs()" title="Baixa um data.js atualizado para subir no GitHub">
+                        ⬇️ Baixar data.js p/ GitHub
+                    </button>
                     <button class="btn btn-primary btn-sm" onclick="closeAdminModal()">Concluir e Fechar</button>
                 </div>
             </div>
