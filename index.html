@@ -577,49 +577,8 @@
         </div>
     </footer>
 
-    <!-- Seus scripts normais da tabela -->
+    <!-- Scripts -->
     <script src="data.js"></script>
     <script src="app.js"></script>
-
-    <!-- Conexão com o Firebase -->
-    <!-- Conexão e Sincronização em Tempo Real com o Firebase -->
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-  import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyCJXfcZbje7ueiEmmqm6f4aQS7ESVDpX3E",
-    authDomain: "bancodedadoscreajr.firebaseapp.com",
-    databaseURL: "https://bancodedadoscreajr-default-rtdb.firebaseio.com",
-    projectId: "bancodedadoscreajr",
-    storageBucket: "bancodedadoscreajr.firebasestorage.app",
-    messagingSenderId: "908891795992",
-    appId: "1:908891795992:web:d9ac539695327e699a496d",
-    measurementId: "G-DSDV8T25M9"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const db = getDatabase(app);
-
-  // Disponibiliza as funções para o app.js
-  window.dbFirebase = db;
-  window.refFirebase = ref;
-  window.setFirebase = set;
-
-  // --- ESCUTAR MUDANÇAS DO FIREBASE EM TEMPO REAL ---
-  const membrosRef = ref(db, 'membros');
-  onValue(membrosRef, (snapshot) => {
-    const dadosMembros = snapshot.val();
-    if (dadosMembros) {
-      // Atualiza o array ou objeto de membros no seu código local
-      // Se você tiver uma função para renderizar a tabela na tela, chame-a aqui:
-      if (typeof window.renderGrid === 'function') {
-        window.renderGrid();
-      } else if (typeof window.init === 'function') {
-        window.init();
-      }
-    }
-  });
-</script>
 </body>
 </html>

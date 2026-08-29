@@ -238,21 +238,6 @@ function initDragEvents() {
         }
 
         updateMemberCounters(member);
-
-        // --- FIREBASE: Envia os novos horários do membro em tempo real ---
-    if (mudou && window.dbFirebase) {
-        // Usa o id ou nome do membro como chave no banco (ex: "membro_wesley" ou o id dele)
-        const idMembro = member.id || member.name || "membro_generico";
-        const membroRef = window.refFirebase(window.dbFirebase, 'membros/' + idMembro);
-        
-        window.setFirebase(membroRef, {
-            nome: member.name || idMembro,
-            freeSlots: member.freeSlots,
-            atualizadoEm: new Date().toISOString()
-        }).catch(err => console.error("Erro ao salvar no Firebase:", err));
-    }
-};
-    
     };
 
     // MOUSE EVENTS
