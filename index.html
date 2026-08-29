@@ -25,6 +25,17 @@
         <div class="blob"></div>
         <div class="blob"></div>
     </div>
+<!-- Confirmações de horários pro DB -->
+    <div>
+  <h2>Horários Atuais:</h2>
+  <p id="exibirHorario">Carregando horários...</p>
+
+  <hr>
+
+  <h3>Atualizar Horário:</h3>
+  <input type="text" id="campoHorario" placeholder="Ex: 08:00 - 18:00">
+  <button id="btnSalvar">Salvar no Banco</button>
+</div>
 
     <!-- Cabeçalho Principal -->
     <header class="site-header">
@@ -578,7 +589,61 @@
     </footer>
 
     <!-- Scripts -->
+    <!-- Scripts já existentes do seu projeto -->
     <script src="data.js"></script>
     <script src="app.js"></script>
+
+    <!-- Script do Firebase -->
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+      import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyCJXfcZbje7ueiEmmqm6f4aQS7ESVDpX3E",
+        authDomain: "bancodedadoscreajr.firebaseapp.com",
+        databaseURL: "https://bancodedadoscreajr-default-rtdb.firebaseio.com",
+        projectId: "bancodedadoscreajr",
+        storageBucket: "bancodedadoscreajr.firebasestorage.app",
+        messagingSenderId: "908891795992",
+        appId: "1:908891795992:web:d9ac539695327e699a496d",
+        measurementId: "G-DSDV8T25M9"
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const db = getDatabase(app);
+      const horariosRef = ref(db, 'horarios');
+
+      // Escuta as alterações no Firebase e atualiza a tela para todos
+      onValue(horariosRef, (snapshot) => {
+        const data = snapshot.val();
+        if (data && data.texto) {
+          const el = document.getElementById("exibirHorario");
+          if (el) el.innerText = data.texto;
+        } else {
+          const el = document.getElementById("exibirHorario");
+          if (el) el.innerText = "Nenhum horário cadastrado.";
+        }
+      });
+
+      // Clique do botão de salvar
+      const btn = document.getElementById("btnSalvar");
+      if (btn) {
+        btn.addEventListener("click", () => {
+          const campo = document.getElementById("campoHorario");
+          const novoHorario = campo ? campo.value : "";
+          if (!novoHorario) return alert("Digite um horário antes de salvar!");
+
+          set(horariosRef, {
+            texto: novoHorario,
+            atualizadoEm: new Date().toISOString()
+          })
+          .then(() => {
+            alert("Horário atualizado para todos!");
+            if (campo) campo.value = "";
+          })
+          .catch((error) => console.error("Erro ao salvar:", error));
+        });
+      }
+    </script>
 </body>
 </html>
