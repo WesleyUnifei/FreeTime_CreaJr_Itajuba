@@ -6,38 +6,94 @@
 // Estado global da aplicação
 const state = {
     members: [],
-    currentMemberId: 'victor-de-faria',
+    currentMemberId: null,
     currentBrush: 'free', // 'free' ou 'busy'
     isMouseDown: false,
     dragAction: null, // 'add' ou 'remove'
-    meetingSelectedIds: new Set(['victor-de-faria', 'guilherme-rodrigues']),
+    meetingSelectedIds: new Set(),
     currentDeptFilter: 'todos',
     heatmapDeptFilter: 'todos',
     includeSaturday: false,
-    isAdminAuthenticated: false
+    isAdminAuthenticated: false,
+    fbInitialized: false  // impede renderizar antes do Firebase responder
 };
+
+// Esconde o overlay de carregamento
+function hideLoadingOverlay() {
+    const overlay = document.getElementById('firebaseLoadingOverlay');
+    if (overlay) {
+        overlay.style.transition = 'opacity 0.4s';
+        overlay.style.opacity = '0';
+        setTimeout(() => overlay.remove(), 450);
+    }
+}
+
+// Callback chamado toda vez que o Firebase envia dados atualizados
+function onFirebaseUpdate(members) {
+    // Mantém o membro atual selecionado se ele ainda existir
+    const currentStillExists = members.some(m => m.id === state.currentMemberId);
+
+    // Atualiza a lista de membros no estado
+    state.members = members;
+
+    // Se for a primeira carga, configura o membro inicial
+    if (!state.fbInitialized) {
+        state.fbInitialized = true;
+
+        // Tenta manter victor-de-faria como padrão; se não existir, pega o primeiro
+        if (!currentStillExists) {
+            const defaultId = 'victor-de-faria';
+            state.currentMemberId = members.some(m => m.id === defaultId)
+                ? defaultId
+                : (members[0] ? members[0].id : null);
+        }
+
+        // Inicializa eventos e componentes que só precisam ser criados uma vez
+        initTabs();
+        initDragEvents();
+        initActionButtons();
+        initPinAuthEvents();
+        initAdminEvents();
+
+        hideLoadingOverlay();
+    } else {
+        // Atualização em tempo real de outro dispositivo:
+        // Não reseta o membro atual se ele ainda existe
+        if (!currentStillExists && members.length > 0) {
+            state.currentMemberId = members[0].id;
+        }
+    }
+
+    // Re-renderiza todo o site com os dados novos
+    syncEntireSite();
+}
 
 // Inicialização ao carregar o DOM
 document.addEventListener('DOMContentLoaded', () => {
-    state.members = loadStoredData();
-    
-    // Se o membro inicial não existir mais, pega o primeiro
-    if (!state.members.some(m => m.id === state.currentMemberId) && state.members.length > 0) {
-        state.currentMemberId = state.members[0].id;
-    }
-    
-    initTabs();
-    initMemberSelector();
-    renderIndividualSchedule();
-    initDragEvents();
-    renderMeetingParticipants();
-    renderMeetingSchedule();
-    renderHeatmap();
-    renderMembersDirectory();
-    initActionButtons();
-    initPinAuthEvents();
-    initAdminEvents();
+    // Inicializa Firebase e configura listener em tempo real
+    fbSetup();
+    fbListen(onFirebaseUpdate);
+
+    // Fallback: se Firebase não responder em 6s, usa localStorage
+    setTimeout(() => {
+        if (!state.fbInitialized) {
+            console.warn('[App] Firebase timeout. Usando localStorage como fallback.');
+            state.members = loadStoredData();
+            if (state.members.length > 0) {
+                state.currentMemberId = state.members[0].id;
+            }
+            state.fbInitialized = true;
+            initTabs();
+            initDragEvents();
+            initActionButtons();
+            initPinAuthEvents();
+            initAdminEvents();
+            hideLoadingOverlay();
+            syncEntireSite();
+        }
+    }, 6000);
 });
+
 
 /* ==========================================================================
    1. NAVEGAÇÃO DE ABAS
@@ -272,8 +328,12 @@ function initDragEvents() {
         if (state.isMouseDown) {
             state.isMouseDown = false;
             state.dragAction = null;
-            saveStoredData(state.members);
-            showToast('Horários atualizados e salvos!');
+            const m = getCurrentMember();
+            if (m) {
+                fbSaveMemberSlots(m.id, m.freeSlots || []);
+                saveStoredData(state.members); // mantém cache local
+            }
+            showToast('Horários atualizados! Sincronizando…');
         }
     });
 
@@ -312,8 +372,12 @@ function initDragEvents() {
         if (state.isMouseDown) {
             state.isMouseDown = false;
             state.dragAction = null;
-            saveStoredData(state.members);
-            showToast('Horários salvos!');
+            const m = getCurrentMember();
+            if (m) {
+                fbSaveMemberSlots(m.id, m.freeSlots || []);
+                saveStoredData(state.members);
+            }
+            showToast('Horários salvos em tempo real!');
         }
     });
 }
@@ -339,6 +403,7 @@ function initActionButtons() {
     if (btnFillManha) {
         btnFillManha.addEventListener('click', () => {
             const m = member();
+            if (!m) return;
             if (!m.freeSlots) m.freeSlots = [];
             days.forEach(d => {
                 ['M1', 'M2', 'M3', 'M4', 'M5'].forEach(s => {
@@ -346,9 +411,10 @@ function initActionButtons() {
                     if (!m.freeSlots.includes(key)) m.freeSlots.push(key);
                 });
             });
+            fbSaveMemberSlots(m.id, m.freeSlots);
             saveStoredData(state.members);
             renderIndividualSchedule();
-            showToast('Turno da Manhã preenchido como Livre!');
+            showToast('Turno da Manhã salvo como Livre!');
         });
     }
 
@@ -356,6 +422,7 @@ function initActionButtons() {
     if (btnFillTarde) {
         btnFillTarde.addEventListener('click', () => {
             const m = member();
+            if (!m) return;
             if (!m.freeSlots) m.freeSlots = [];
             days.forEach(d => {
                 ['T1', 'T2', 'T3', 'T4', 'T5'].forEach(s => {
@@ -363,9 +430,10 @@ function initActionButtons() {
                     if (!m.freeSlots.includes(key)) m.freeSlots.push(key);
                 });
             });
+            fbSaveMemberSlots(m.id, m.freeSlots);
             saveStoredData(state.members);
             renderIndividualSchedule();
-            showToast('Turno da Tarde preenchido como Livre!');
+            showToast('Turno da Tarde salvo como Livre!');
         });
     }
 
@@ -373,6 +441,7 @@ function initActionButtons() {
     if (btnFillNoite) {
         btnFillNoite.addEventListener('click', () => {
             const m = member();
+            if (!m) return;
             if (!m.freeSlots) m.freeSlots = [];
             days.forEach(d => {
                 ['N1', 'N2', 'N3', 'N4', 'N5'].forEach(s => {
@@ -380,9 +449,10 @@ function initActionButtons() {
                     if (!m.freeSlots.includes(key)) m.freeSlots.push(key);
                 });
             });
+            fbSaveMemberSlots(m.id, m.freeSlots);
             saveStoredData(state.members);
             renderIndividualSchedule();
-            showToast('Turno da Noite preenchido como Livre!');
+            showToast('Turno da Noite salvo como Livre!');
         });
     }
 
@@ -390,12 +460,14 @@ function initActionButtons() {
     if (btnFillAll) {
         btnFillAll.addEventListener('click', () => {
             const m = member();
+            if (!m) return;
             m.freeSlots = [];
             days.forEach(d => {
                 ALL_SLOTS.forEach(s => {
                     m.freeSlots.push(`${d}_${s.id}`);
                 });
             });
+            fbSaveMemberSlots(m.id, m.freeSlots);
             saveStoredData(state.members);
             renderIndividualSchedule();
             showToast('Todos os horários marcados como Livres!');
@@ -407,7 +479,9 @@ function initActionButtons() {
         btnClearAll.addEventListener('click', () => {
             if (confirm('Deseja limpar todos os horários livres deste membro?')) {
                 const m = member();
+                if (!m) return;
                 m.freeSlots = [];
+                fbSaveMemberSlots(m.id, m.freeSlots);
                 saveStoredData(state.members);
                 renderIndividualSchedule();
                 showToast('Horários limpos com sucesso!');
@@ -1135,6 +1209,7 @@ function handleSaveMemberForm(e) {
             member.role = role;
             member.department = department;
             member.photo = photo;
+            fbSaveMember(member);
             showToast(`Membro "${name}" atualizado com sucesso!`);
         }
     } else {
@@ -1149,10 +1224,11 @@ function handleSaveMemberForm(e) {
             photo: photo,
             email: '',
             phone: '',
-            freeSlots: generateSampleSlots(state.members.length + 1)
+            freeSlots: []
         };
 
         state.members.push(newMember);
+        fbSaveMember(newMember);
         showToast(`Novo membro "${name}" adicionado com sucesso!`);
     }
 
@@ -1220,6 +1296,7 @@ function deleteAdminMember(memberId) {
             state.currentMemberId = state.members[0].id;
         }
 
+        fbDeleteMember(memberId);
         saveStoredData(state.members);
         renderAdminMembersTable();
         syncEntireSite();
@@ -1338,9 +1415,10 @@ function importDataJson(e) {
             const parsed = JSON.parse(event.target.result);
             if (parsed && Array.isArray(parsed.members)) {
                 state.members = parsed.members;
+                _fbWriteAllMembers(state.members);
                 saveStoredData(state.members);
                 syncEntireSite();
-                showToast('Dados importados e site atualizado com sucesso!');
+                showToast('Dados importados e salvos no Firebase em tempo real!');
             } else {
                 alert('Formato de arquivo inválido.');
             }
