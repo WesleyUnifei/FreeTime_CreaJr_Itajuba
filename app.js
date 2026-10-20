@@ -6,13 +6,15 @@
 // Estado global da aplicação
 const state = {
     members: [],
-    currentMemberId: null,
+    currentMemberId: null, // Abre sem membro pré-selecionado, permitindo escolha limpa
     currentBrush: 'free', // 'free' ou 'busy'
     isMouseDown: false,
     dragAction: null, // 'add' ou 'remove'
     meetingSelectedIds: new Set(),
     currentDeptFilter: 'todos',
     heatmapDeptFilter: 'todos',
+    welcomeDeptFilter: 'todos',
+    welcomeSearchTerm: '',
     includeSaturday: false,
     isAdminAuthenticated: false,
     fbInitialized: false  // impede renderizar antes do Firebase responder
@@ -30,38 +32,27 @@ function hideLoadingOverlay() {
 
 // Callback chamado toda vez que o Firebase envia dados atualizados
 function onFirebaseUpdate(members) {
-    // Mantém o membro atual selecionado se ele ainda existir
-    const currentStillExists = members.some(m => m.id === state.currentMemberId);
+    // Verifica se o membro atual selecionado ainda existe
+    const currentStillExists = state.currentMemberId && members.some(m => m.id === state.currentMemberId);
+    if (!currentStillExists) {
+        state.currentMemberId = null;
+    }
 
     // Atualiza a lista de membros no estado
     state.members = members;
 
-    // Se for a primeira carga, configura o membro inicial
+    // Se for a primeira carga, inicializa os eventos dos componentes
     if (!state.fbInitialized) {
         state.fbInitialized = true;
 
-        // Tenta manter victor-de-faria como padrão; se não existir, pega o primeiro
-        if (!currentStillExists) {
-            const defaultId = 'victor-de-faria';
-            state.currentMemberId = members.some(m => m.id === defaultId)
-                ? defaultId
-                : (members[0] ? members[0].id : null);
-        }
-
-        // Inicializa eventos e componentes que só precisam ser criados uma vez
         initTabs();
+        initWelcomeSelectionEvents();
         initDragEvents();
         initActionButtons();
         initPinAuthEvents();
         initAdminEvents();
 
         hideLoadingOverlay();
-    } else {
-        // Atualização em tempo real de outro dispositivo:
-        // Não reseta o membro atual se ele ainda existe
-        if (!currentStillExists && members.length > 0) {
-            state.currentMemberId = members[0].id;
-        }
     }
 
     // Re-renderiza todo o site com os dados novos
@@ -79,11 +70,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!state.fbInitialized) {
             console.warn('[App] Firebase timeout. Usando localStorage como fallback.');
             state.members = loadStoredData();
-            if (state.members.length > 0) {
-                state.currentMemberId = state.members[0].id;
-            }
+            state.currentMemberId = null;
             state.fbInitialized = true;
+
             initTabs();
+            initWelcomeSelectionEvents();
             initDragEvents();
             initActionButtons();
             initPinAuthEvents();
@@ -133,13 +124,125 @@ function switchTab(tabId) {
 }
 
 /* ==========================================================================
-   2. ABA 1: MEU FREE TIME (INDIVIDUAL)
+   2. ABA 1: MEU FREE TIME (SELEÇÃO INICIAL & EDITOR)
    ========================================================================== */
+
+// Configura eventos da tela inicial de seleção de membro
+function initWelcomeSelectionEvents() {
+    const searchInput = document.getElementById('welcomeMemberSearch');
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            state.welcomeSearchTerm = e.target.value.toLowerCase().trim();
+            renderWelcomeMembersGrid();
+        });
+    }
+
+    const deptChips = document.querySelectorAll('#welcomeDeptChips .chip');
+    deptChips.forEach(chip => {
+        chip.addEventListener('click', () => {
+            deptChips.forEach(c => c.classList.remove('active'));
+            chip.classList.add('active');
+            state.welcomeDeptFilter = chip.getAttribute('data-dept') || 'todos';
+            renderWelcomeMembersGrid();
+        });
+    });
+
+    const btnChangeMember = document.getElementById('btnChangeMember');
+    if (btnChangeMember) {
+        btnChangeMember.addEventListener('click', clearSelectedMember);
+    }
+}
+
+// Renderiza a grade de seleção inicial de membros
+function renderWelcomeMembersGrid() {
+    const container = document.getElementById('welcomeMembersGrid');
+    if (!container) return;
+
+    let filtered = state.members;
+
+    if (state.welcomeDeptFilter !== 'todos') {
+        filtered = filtered.filter(m => m.department === state.welcomeDeptFilter);
+    }
+
+    if (state.welcomeSearchTerm) {
+        filtered = filtered.filter(m => {
+            const name = (m.name || '').toLowerCase();
+            const role = (m.role || '').toLowerCase();
+            return name.includes(state.welcomeSearchTerm) || role.includes(state.welcomeSearchTerm);
+        });
+    }
+
+    if (filtered.length === 0) {
+        container.innerHTML = `
+            <div style="grid-column: 1 / -1; padding: 40px 20px; text-align: center; color: var(--text-muted);">
+                <p style="font-size: 1.1rem; font-weight: 600; color: #ffffff; margin-bottom: 6px;">Nenhum membro encontrado</p>
+                <p style="font-size: 0.85rem;">Tente buscar por outro termo ou selecione "Todos" nas categorias acima.</p>
+            </div>
+        `;
+        return;
+    }
+
+    let html = '';
+    filtered.forEach(m => {
+        const dept = DEPARTMENTS.find(d => d.id === m.department) || { name: m.department || 'Geral', color: '#3b82f6', bgLight: 'rgba(59, 130, 246, 0.15)' };
+        const freeCount = m.freeSlots ? m.freeSlots.length : 0;
+        const approxHours = ((freeCount * 55) / 60).toFixed(1);
+        const photo = m.photo || DEFAULT_MEMBER_AVATAR;
+
+        html += `
+            <div class="welcome-member-card" onclick="selectMember('${m.id}')" title="Clique para editar os horários de ${m.name}">
+                <img src="${photo}" alt="${m.name}" class="welcome-member-avatar" onerror="this.src='${DEFAULT_MEMBER_AVATAR}'">
+                <div class="welcome-member-info">
+                    <div class="welcome-member-name">${m.name}</div>
+                    <div class="welcome-member-role">${m.role}</div>
+                    <div class="welcome-member-footer">
+                        <span class="member-dept-badge" style="background: ${dept.bgLight}; color: ${dept.color};">
+                            ${dept.name}
+                        </span>
+                        <span class="welcome-free-count">
+                            🟢 ${freeCount} blocos (${approxHours}h)
+                        </span>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+
+    container.innerHTML = html;
+}
+
+// Seleciona um membro e abre a grade de edição
+function selectMember(memberId) {
+    if (!memberId) {
+        clearSelectedMember();
+        return;
+    }
+
+    state.currentMemberId = memberId;
+
+    const select = document.getElementById('memberSelect');
+    if (select) select.value = memberId;
+
+    renderIndividualSchedule();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// Desmarca o membro atual e retorna para a tela inicial de seleção
+function clearSelectedMember() {
+    state.currentMemberId = null;
+
+    const select = document.getElementById('memberSelect');
+    if (select) select.value = '';
+
+    renderIndividualSchedule();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
 function initMemberSelector() {
     const select = document.getElementById('memberSelect');
     if (!select) return;
 
-    select.innerHTML = '';
+    select.innerHTML = '<option value="">-- Trocar / Selecionar Membro --</option>';
     
     // Agrupa por diretoria
     DEPARTMENTS.forEach(dept => {
@@ -159,8 +262,12 @@ function initMemberSelector() {
     });
 
     select.addEventListener('change', (e) => {
-        state.currentMemberId = e.target.value;
-        renderIndividualSchedule();
+        const val = e.target.value;
+        if (val) {
+            selectMember(val);
+        } else {
+            clearSelectedMember();
+        }
     });
 
     // Pincel Livre / Ocupado
@@ -183,14 +290,29 @@ function initMemberSelector() {
 }
 
 function getCurrentMember() {
-    return state.members.find(m => m.id === state.currentMemberId) || state.members[0];
+    if (!state.currentMemberId) return null;
+    return state.members.find(m => m.id === state.currentMemberId) || null;
 }
 
 function renderIndividualSchedule() {
-    const member = getCurrentMember();
-    if (!member) return;
+    const welcomeView = document.getElementById('memberSelectionWelcome');
+    const editorView = document.getElementById('memberEditorView');
 
-    // Atualiza o card de info do membro
+    const member = getCurrentMember();
+
+    // Se nenhum membro foi escolhido, mostra a tela de seleção inicial
+    if (!member) {
+        if (welcomeView) welcomeView.style.display = 'block';
+        if (editorView) editorView.style.display = 'none';
+        renderWelcomeMembersGrid();
+        return;
+    }
+
+    // Membro escolhido: exibe a grade de edição
+    if (welcomeView) welcomeView.style.display = 'none';
+    if (editorView) editorView.style.display = 'block';
+
+    // Atualiza o banner do membro ativo
     const photoEl = document.getElementById('currentMemberPhoto');
     const nameEl = document.getElementById('currentMemberName');
     const roleEl = document.getElementById('currentMemberRole');
@@ -198,11 +320,14 @@ function renderIndividualSchedule() {
     const freeSlotsCountEl = document.getElementById('currentMemberFreeCount');
     const freeHoursCountEl = document.getElementById('currentMemberFreeHours');
 
-    if (photoEl) photoEl.src = member.photo || 'https://via.placeholder.com/150';
+    if (photoEl) {
+        photoEl.src = member.photo || DEFAULT_MEMBER_AVATAR;
+        photoEl.onerror = () => { photoEl.src = DEFAULT_MEMBER_AVATAR; };
+    }
     if (nameEl) nameEl.textContent = member.name;
     if (roleEl) roleEl.textContent = member.role;
 
-    const dept = DEPARTMENTS.find(d => d.id === member.department) || { name: member.department, color: '#0033A0', bgLight: '#e6f0ff' };
+    const dept = DEPARTMENTS.find(d => d.id === member.department) || { name: member.department || 'Geral', color: '#3b82f6', bgLight: 'rgba(59, 130, 246, 0.15)' };
     if (badgeEl) {
         badgeEl.textContent = dept.name;
         badgeEl.style.backgroundColor = dept.bgLight;
@@ -213,6 +338,10 @@ function renderIndividualSchedule() {
     if (freeSlotsCountEl) freeSlotsCountEl.textContent = freeCount;
     const approxHours = ((freeCount * 55) / 60).toFixed(1);
     if (freeHoursCountEl) freeHoursCountEl.textContent = `${approxHours}h`;
+
+    // Atualiza o select
+    const select = document.getElementById('memberSelect');
+    if (select) select.value = member.id;
 
     // Renderiza a grade HTML
     const gridTbody = document.getElementById('individualGridTbody');
@@ -703,9 +832,9 @@ function renderBestMeetingSlots(perfectSlots, totalSelected) {
 
     if (perfectSlots.length === 0) {
         container.innerHTML = `
-            <div style="background: #fff8e6; border: 1px solid #fde047; padding: 12px 16px; border-radius: var(--radius-sm); color: #854d0e;">
-                ⚠️ Não há nenhum horário com <strong>100%</strong> dos ${totalSelected} membros livres ao mesmo tempo. 
-                Tente verificar os horários em amarelo/verde claro na tabela onde a grande maioria está disponível!
+            <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.25); padding: 14px 18px; border-radius: var(--radius-md); color: #fde68a; font-size: 0.85rem;">
+                ⚠️ Não há horários com <strong>100%</strong> dos ${totalSelected} membros livres simultaneamente. 
+                Consulte os blocos destacados em amarelo ou verde na tabela onde a grande maioria está disponível.
             </div>
         `;
         return;
@@ -819,15 +948,15 @@ function renderHeatmap() {
                 const freeCount = filteredMembers.filter(m => m.freeSlots && m.freeSlots.includes(slotKey)).length;
                 const ratio = total > 0 ? (freeCount / total) : 0;
 
-                let bgStyle = 'background: #f8fafc; color: #64748b;';
+                let bgStyle = 'background: var(--bg-surface); color: var(--text-subtle);';
                 if (ratio > 0) {
                     const intensity = Math.round(ratio * 100);
                     if (intensity > 60) {
-                        bgStyle = `background: rgba(0, 51, 160, ${0.3 + (ratio * 0.7)}); color: #ffffff; font-weight: 800;`;
+                        bgStyle = `background: rgba(59, 130, 246, 0.7); color: #ffffff; font-weight: 800; border: 1px solid rgba(59, 130, 246, 0.9);`;
                     } else if (intensity > 30) {
-                        bgStyle = `background: rgba(0, 119, 181, ${0.2 + (ratio * 0.6)}); color: #00226C; font-weight: 700;`;
+                        bgStyle = `background: rgba(59, 130, 246, 0.35); color: #93c5fd; font-weight: 700;`;
                     } else {
-                        bgStyle = `background: rgba(137, 207, 240, ${0.2 + (ratio * 0.5)}); color: #0033A0;`;
+                        bgStyle = `background: rgba(59, 130, 246, 0.15); color: #60a5fa;`;
                     }
                 }
 
@@ -875,8 +1004,9 @@ function renderMembersDirectory() {
 
         html += `
             <div style="margin-bottom: 32px;">
-                <h3 style="font-family: 'Montserrat', sans-serif; color: ${dept.color}; font-size: 1.3rem; border-bottom: 2px solid ${dept.color}; padding-bottom: 8px; margin-bottom: 16px;">
-                    ${dept.name} (${deptMembers.length})
+                <h3 style="font-size: 1.15rem; font-weight: 700; color: #ffffff; border-bottom: 2px solid ${dept.color}; padding-bottom: 8px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between;">
+                    <span>${dept.name}</span>
+                    <span style="font-size: 0.78rem; font-weight: 600; color: var(--text-muted); background: var(--bg-surface-elevated); padding: 3px 8px; border-radius: 20px;">${deptMembers.length} membros</span>
                 </h3>
                 <div class="members-grid-view">
         `;
@@ -887,15 +1017,20 @@ function renderMembersDirectory() {
 
             html += `
                 <div class="member-dir-card">
-                    <img src="${member.photo || 'https://via.placeholder.com/120'}" class="dir-photo" alt="${member.name}">
+                    <img src="${member.photo || DEFAULT_MEMBER_AVATAR}" class="dir-photo" alt="${member.name}" onerror="this.src='${DEFAULT_MEMBER_AVATAR}'">
                     <h4>${member.name}</h4>
                     <p>${member.role}</p>
-                    <div style="background: #f1f5f9; padding: 6px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: 700; color: #0033A0; margin-bottom: 12px;">
-                        ⏰ ${freeSlotsCount} blocos livres (~${approxHours}h)
+                    <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-color); padding: 6px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: 700; color: var(--primary); margin-bottom: 12px; width: 100%;">
+                        🟢 ${freeSlotsCount} blocos livres (~${approxHours}h)
                     </div>
-                    <button class="btn btn-outline btn-sm" style="width: 100%;" onclick="editMemberFreeTime('${member.id}')">
-                        ✏️ Editar Horários
-                    </button>
+                    <div style="display: flex; gap: 6px; width: 100%;">
+                        <button class="btn btn-secondary btn-sm" style="flex: 1;" onclick="editMemberFreeTime('${member.id}')" title="Ver e editar horários">
+                            ✏️ Horários
+                        </button>
+                        <button class="btn btn-ghost btn-sm" style="flex: 1;" onclick="downloadMemberPhoto('${member.id}')" title="Fazer download da foto do membro em alta qualidade">
+                            📥 Baixar Foto
+                        </button>
+                    </div>
                 </div>
             `;
         });
@@ -914,6 +1049,80 @@ function editMemberFreeTime(memberId) {
     renderIndividualSchedule();
     window.scrollTo({ top: 0, behavior: 'smooth' });
     showToast('Membro carregado para edição de horários!');
+}
+
+// Faz o download da foto do membro (ideal para posts de membro do mês / marketing)
+function downloadMemberPhoto(memberId) {
+    const member = state.members.find(m => m.id === memberId);
+    if (!member) return;
+
+    const photoUrl = member.photo || DEFAULT_MEMBER_AVATAR;
+    const cleanName = (member.name || 'membro')
+        .toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]/g, "-")
+        .replace(/-+/g, '-');
+    const fileName = `creajr-${cleanName}.png`;
+
+    // 1. Caso a foto seja Base64 ou Blob URL
+    if (photoUrl.startsWith('data:') || photoUrl.startsWith('blob:')) {
+        const a = document.createElement('a');
+        a.href = photoUrl;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        showToast(`Download da foto de ${member.name} iniciado!`);
+        return;
+    }
+
+    // 2. Caso seja URL da web (tentativa via fetch blob para forçar download local)
+    fetch(photoUrl)
+        .then(res => {
+            if (!res.ok) throw new Error('Erro na resposta');
+            return res.blob();
+        })
+        .then(blob => {
+            const blobUrl = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = blobUrl;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+            showToast(`Foto de ${member.name} baixada com sucesso!`);
+        })
+        .catch(() => {
+            // Fallback via Canvas para contornar bloqueios de download em imagens externas
+            const img = new Image();
+            img.crossOrigin = "anonymous";
+            img.onload = () => {
+                try {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.naturalWidth || img.width;
+                    canvas.height = img.naturalHeight || img.height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0);
+                    const dataUrl = canvas.toDataURL('image/png');
+                    const a = document.createElement('a');
+                    a.href = dataUrl;
+                    a.download = fileName;
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    showToast(`Foto de ${member.name} baixada com sucesso!`);
+                } catch (err) {
+                    // Fallback seguro: abre a foto em nova aba
+                    window.open(photoUrl, '_blank');
+                    showToast(`Foto aberta em nova guia para salvar!`);
+                }
+            };
+            img.onerror = () => {
+                window.open(photoUrl, '_blank');
+            };
+            img.src = photoUrl;
+        });
 }
 
 const dirDeptSelect = document.getElementById('dirDeptFilter');

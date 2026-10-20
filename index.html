@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Free Time & Horários | Crea-Jr Núcleo Itajubá</title>
+    <title>Disponibilidade & Reuniões | Crea-Jr Núcleo Itajubá</title>
     
-    <!-- Fontes Google -->
+    <!-- Fontes Modernas: Plus Jakarta Sans -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800;900&family=Segoe+UI:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <!-- Ícone Favicon -->
     <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/Marketingcreajrmgitajuba12/Link-de-acesso-rapido/main/Processo%20Seletivo%202025.2%20-%201.png">
@@ -18,43 +18,38 @@
 </head>
 <body>
 
-    <!-- Formas Flutuantes Animadas no Fundo -->
-    <div class="background-shapes">
-        <div class="blob"></div>
-        <div class="blob"></div>
-        <div class="blob"></div>
-        <div class="blob"></div>
-    </div>
-
-    <!-- Cabeçalho Principal -->
+    <!-- Cabeçalho Principal Clean e Moderno -->
     <header class="site-header">
         <div class="header-container">
             <div class="header-brand">
-                <img src="https://raw.githubusercontent.com/Marketingcreajrmgitajuba12/Link-de-acesso-rapido/main/Processo%20Seletivo%202025.2%20-%201.png" alt="Logo Crea-Jr Itajubá" class="header-logo">
+                <img src="https://raw.githubusercontent.com/Marketingcreajrmgitajuba12/Link-de-acesso-rapido/main/Processo%20Seletivo%202025.2%20-%201.png" alt="Logo Crea-Jr" class="header-logo">
                 <div class="header-titles">
-                    <h1>CREA-JR NÚCLEO ITAJUBÁ</h1>
-                    <p>Painel de Free Time & Agendamento de Reuniões</p>
+                    <div class="brand-row">
+                        <h1>CREA-JR ITAJUBÁ</h1>
+                        <span class="live-status-pill" title="Sincronização em nuvem ativa">
+                            <span class="pulse-dot"></span> Tempo Real
+                        </span>
+                    </div>
+                    <p>Gestão de Disponibilidade & Reuniões</p>
                 </div>
             </div>
             
             <div class="header-actions">
-                <button class="btn btn-outline btn-sm" id="btnOpenAdminHeader" title="Área Restrita para Editar Membros Ativos">
-                    🔒 Editar Membros Ativos
+                <button class="btn btn-primary btn-sm" id="btnOpenAdminHeader" title="Área Restrita para Editar Membros Ativos">
+                    <span>⚙️</span> Gestão de Membros
                 </button>
-                <button class="btn btn-outline btn-sm" id="btnExportJson" title="Fazer download de backup dos horários em JSON">
-                    💾 Exportar Dados
-                </button>
-                <button class="btn btn-outline btn-sm" id="btnImportJson" title="Importar arquivo de backup JSON">
-                    📂 Importar Dados
-                </button>
-                <input type="file" id="inputImportFile" accept=".json" style="display: none;">
-                
-                <button class="btn btn-outline btn-sm" id="btnPrint" title="Imprimir ou Salvar em PDF">
-                    🖨️ Imprimir
-                </button>
-                <button class="btn btn-outline btn-sm" id="btnResetData" title="Restaurar lista original de membros">
-                    🔄 Restaurar Original
-                </button>
+                <div class="dropdown-actions">
+                    <button class="btn btn-ghost btn-sm" id="btnExportJson" title="Exportar Backup JSON">
+                        <span>💾</span> Backup
+                    </button>
+                    <button class="btn btn-ghost btn-sm" id="btnImportJson" title="Importar Backup JSON">
+                        <span>📂</span> Importar
+                    </button>
+                    <input type="file" id="inputImportFile" accept=".json" style="display: none;">
+                    <button class="btn btn-ghost btn-sm" id="btnPrint" title="Imprimir Grade">
+                        <span>🖨️</span> Imprimir
+                    </button>
+                </div>
             </div>
         </div>
     </header>
@@ -62,19 +57,19 @@
     <!-- Conteúdo Principal -->
     <main class="main-wrapper">
         
-        <!-- Navegação por Abas -->
+        <!-- Navegação por Abas Segmentadas -->
         <nav class="tabs-nav">
             <button class="tab-btn active" data-tab="tab-freetime">
-                ⏱️ Meu Free Time (Individual)
+                <span>⏱️</span> Meu Free Time
             </button>
             <button class="tab-btn" data-tab="tab-reunioes">
-                👥 Agendar Reunião (Match de Horários)
+                <span>👥</span> Agendar Reunião
             </button>
             <button class="tab-btn" data-tab="tab-heatmap">
-                📊 Mapa de Calor da Equipe
+                <span>📊</span> Mapa de Calor
             </button>
             <button class="tab-btn" data-tab="tab-membros">
-                📸 Diretório de Membros
+                <span>📸</span> Diretório
             </button>
         </nav>
 
@@ -83,96 +78,122 @@
              ==================================================================== -->
         <section id="tab-freetime" class="tab-content active">
             
-            <!-- Painel do Membro Selecionado e Controles -->
-            <div class="member-selector-panel">
-                
-                <!-- Card de Perfil -->
-                <div class="member-info-card">
-                    <img id="currentMemberPhoto" src="" alt="Foto do Membro" class="member-avatar-lg">
-                    <h3 id="currentMemberName">Carregando...</h3>
-                    <p id="currentMemberRole" style="font-size: 0.88rem; color: var(--text-muted); margin-top: 2px;">Cargo</p>
-                    <span id="currentMemberDeptBadge" class="member-badge">Diretoria</span>
-
-                    <div class="member-stat-box">
-                        <div class="stat-item">
-                            <div id="currentMemberFreeCount" class="stat-val">0</div>
-                            <div class="stat-lbl">Blocos Livres</div>
+            <!-- 1. TELA INICIAL: SELEÇÃO DE MEMBRO (Quando nenhum membro está selecionado) -->
+            <div id="memberSelectionWelcome" class="welcome-selection-view">
+                <div class="welcome-hero-card">
+                    <div class="welcome-badge">Painel de Disponibilidade</div>
+                    <h2>Selecione o Membro para Começar a Editar</h2>
+                    <p>Escolha o seu perfil na equipe para visualizar e preencher seus horários livres da semana.</p>
+                    
+                    <div class="welcome-search-bar">
+                        <div class="search-input-wrapper">
+                            <span class="search-icon">🔍</span>
+                            <input type="text" id="welcomeMemberSearch" class="form-input" placeholder="Buscar membro por nome ou cargo...">
                         </div>
-                        <div class="stat-item">
-                            <div id="currentMemberFreeHours" class="stat-val">0h</div>
-                            <div class="stat-lbl">Tempo Livre Total</div>
+                        <div class="welcome-dept-chips" id="welcomeDeptChips">
+                            <button class="chip active" data-dept="todos">Todos</button>
+                            <button class="chip" data-dept="geral">Geral</button>
+                            <button class="chip" data-dept="financeiro">Financeiro</button>
+                            <button class="chip" data-dept="marketing">Marketing</button>
+                            <button class="chip" data-dept="projetos">Projetos</button>
+                            <button class="chip" data-dept="qualidade">Qualidade</button>
+                            <button class="chip" data-dept="ti">T.I.</button>
+                            <button class="chip" data-dept="documentos">Documentos</button>
+                            <button class="chip" data-dept="pessoas">Pessoas</button>
                         </div>
                     </div>
                 </div>
 
-                <!-- Controles de Edição e Ações Rápidas -->
-                <div class="member-controls-card">
-                    <div>
-                        <label style="display: block; font-size: 0.85rem; font-weight: 700; color: var(--primary-dark); margin-bottom: 6px;">
-                            👤 Selecione o Membro para Visualizar / Editar:
-                        </label>
-                        <div class="control-row">
-                            <div class="search-select-box">
-                                <select id="memberSelect" class="form-select"></select>
-                            </div>
-                            <div class="brush-selector">
-                                <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); margin-left: 6px;">Pincel:</span>
-                                <button type="button" id="brushFree" class="brush-btn active-free">
-                                    🟢 Marcar Livre
-                                </button>
-                                <button type="button" id="brushBusy" class="brush-btn">
-                                    🔴 Marcar Ocupado
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div>
-                        <label style="display: block; font-size: 0.82rem; font-weight: 700; color: var(--text-muted); margin-bottom: 6px;">
-                            ⚡ Preenchimento Rápido por Turno:
-                        </label>
-                        <div class="quick-fill-bar">
-                            <button type="button" id="btnFillManha" class="btn btn-outline btn-sm">☀️ Manhã Livre</button>
-                            <button type="button" id="btnFillTarde" class="btn btn-outline btn-sm">🌤️ Tarde Livre</button>
-                            <button type="button" id="btnFillNoite" class="btn btn-outline btn-sm">🌙 Noite Livre</button>
-                            <button type="button" id="btnFillAll" class="btn btn-outline btn-sm">✨ Marcar Tudo</button>
-                            <button type="button" id="btnClearAll" class="btn btn-outline btn-sm" style="color: var(--danger); border-color: #fca5a5;">🗑️ Limpar</button>
-                        </div>
-                    </div>
-
-                    <div style="font-size: 0.82rem; color: var(--text-muted); border-top: 1px solid #f1f5f9; padding-top: 10px;">
-                        <span>💡 <em>Dica: <strong>Clique e arraste o mouse</strong> sobre a grade para pintar vários horários de uma vez só!</em></span>
-                    </div>
+                <!-- Grid de Membros para Seleção -->
+                <div class="welcome-members-grid" id="welcomeMembersGrid">
+                    <!-- Preenchido via app.js -->
                 </div>
             </div>
 
-            <!-- Grade de Horários -->
-            <div class="app-card">
-                <div class="card-header">
-                    <div class="card-title-group">
-                        <h2>Grade de Horários da Semana</h2>
-                        <p>Blocos de aula: Manhã (M1-M5), Tarde (T1-T5) e Noite (N1-N5)</p>
+            <!-- 2. TELA DO EDITOR: EXIBIDA APÓS SELECIONAR UM MEMBRO -->
+            <div id="memberEditorView" class="member-editor-view" style="display: none;">
+                
+                <!-- Barra Superior do Membro Ativo -->
+                <div class="active-member-banner">
+                    <div class="active-member-profile">
+                        <img id="currentMemberPhoto" src="" alt="Foto" class="active-member-avatar">
+                        <div class="active-member-meta">
+                            <div class="meta-name-row">
+                                <h3 id="currentMemberName">Membro</h3>
+                                <span id="currentMemberDeptBadge" class="member-dept-tag">Diretoria</span>
+                            </div>
+                            <p id="currentMemberRole" class="active-member-role">Cargo</p>
+                        </div>
+                    </div>
+
+                    <div class="active-member-stats">
+                        <div class="stat-pill">
+                            <span class="stat-num" id="currentMemberFreeCount">0</span>
+                            <span class="stat-label">Blocos Livres</span>
+                        </div>
+                        <div class="stat-pill">
+                            <span class="stat-num" id="currentMemberFreeHours">0h</span>
+                            <span class="stat-label">Total Livre</span>
+                        </div>
+                        <button type="button" class="btn btn-secondary btn-sm" id="btnChangeMember" title="Voltar para a seleção de membros">
+                            <span>🔄</span> Trocar Membro
+                        </button>
                     </div>
                 </div>
 
-                <div class="schedule-grid-container" id="individualScheduleGrid">
-                    <table class="schedule-table">
-                        <thead>
-                            <tr>
-                                <th class="time-header">Horário / Bloco</th>
-                                <th>Segunda-feira</th>
-                                <th>Terça-feira</th>
-                                <th>Quarta-feira</th>
-                                <th>Quinta-feira</th>
-                                <th>Sexta-feira</th>
-                                <th>Sábado</th>
-                            </tr>
-                        </thead>
-                        <tbody id="individualGridTbody">
-                            <!-- Preenchido via app.js -->
-                        </tbody>
-                    </table>
+                <!-- Barra de Ferramentas de Edição -->
+                <div class="editor-toolbar-card">
+                    <div class="toolbar-section">
+                        <label class="toolbar-label">Membro em Edição:</label>
+                        <select id="memberSelect" class="form-select"></select>
+                    </div>
+
+                    <div class="toolbar-section">
+                        <label class="toolbar-label">Modo do Pincel:</label>
+                        <div class="brush-toggle">
+                            <button type="button" id="brushFree" class="brush-btn active-free">
+                                <span class="brush-dot green"></span> Livre
+                            </button>
+                            <button type="button" id="brushBusy" class="brush-btn">
+                                <span class="brush-dot red"></span> Ocupado
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="toolbar-section flex-grow">
+                        <label class="toolbar-label">Preenchimento Rápido:</label>
+                        <div class="quick-fill-group">
+                            <button type="button" id="btnFillManha" class="btn btn-chip">☀️ Manhã</button>
+                            <button type="button" id="btnFillTarde" class="btn btn-chip">🌤️ Tarde</button>
+                            <button type="button" id="btnFillNoite" class="btn btn-chip">🌙 Noite</button>
+                            <button type="button" id="btnFillAll" class="btn btn-chip">✨ Tudo Livre</button>
+                            <button type="button" id="btnClearAll" class="btn btn-chip btn-chip-danger">🗑️ Limpar</button>
+                        </div>
+                    </div>
                 </div>
+
+                <!-- Grade de Horários -->
+                <div class="app-card schedule-card">
+                    <div class="schedule-grid-container" id="individualScheduleGrid">
+                        <table class="schedule-table">
+                            <thead>
+                                <tr>
+                                    <th class="time-header">Horário / Bloco</th>
+                                    <th>Segunda-feira</th>
+                                    <th>Terça-feira</th>
+                                    <th>Quarta-feira</th>
+                                    <th>Quinta-feira</th>
+                                    <th>Sexta-feira</th>
+                                    <th>Sábado</th>
+                                </tr>
+                            </thead>
+                            <tbody id="individualGridTbody">
+                                <!-- Preenchido via app.js -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
             </div>
         </section>
 
@@ -419,8 +440,8 @@
             </div>
 
             <!-- Formulário de Adicionar / Editar Membro -->
-            <div style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 18px; margin-bottom: 24px;">
-                <h4 id="adminFormTitle" style="color: var(--primary-dark); font-size: 1rem; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+            <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 18px; margin-bottom: 24px;">
+                <h4 id="adminFormTitle" style="color: #ffffff; font-size: 1rem; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
                     <span>➕ Adicionar Novo Membro</span>
                 </h4>
                 
@@ -452,8 +473,8 @@
                     </div>
 
                     <!-- Seção de Foto: Upload de Arquivo ou Link -->
-                    <div style="background: #ffffff; border: 1px dashed var(--border-color); border-radius: var(--radius-sm); padding: 12px 16px; margin-bottom: 14px;">
-                        <label style="font-size: 0.82rem; font-weight: 700; color: var(--primary-dark); display: block; margin-bottom: 8px;">
+                    <div style="background: var(--bg-surface); border: 1px dashed var(--border-color-strong); border-radius: var(--radius-sm); padding: 12px 16px; margin-bottom: 14px;">
+                        <label style="font-size: 0.82rem; font-weight: 700; color: #ffffff; display: block; margin-bottom: 8px;">
                             📸 Foto do Membro (Upload do Dispositivo ou Link da Web):
                         </label>
                         <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
@@ -580,16 +601,17 @@
     <!-- Overlay de Carregamento (Firebase) -->
     <div id="firebaseLoadingOverlay" style="
         position: fixed; inset: 0; z-index: 9999;
-        background: rgba(0,33,100,0.92);
+        background: rgba(9, 13, 22, 0.95);
+        backdrop-filter: blur(10px);
         display: flex; flex-direction: column;
         align-items: center; justify-content: center;
-        gap: 18px; color: white; font-family: 'Montserrat', sans-serif;">
+        gap: 16px; color: white; font-family: 'Plus Jakarta Sans', sans-serif;">
         <img src="https://raw.githubusercontent.com/Marketingcreajrmgitajuba12/Link-de-acesso-rapido/main/Processo%20Seletivo%202025.2%20-%201.png"
-             style="width: 70px; height: 70px; border-radius: 50%; object-fit: cover; border: 3px solid rgba(255,255,255,0.4);" alt="Logo">
-        <div style="font-size: 1.15rem; font-weight: 700;">Crea-Jr Núcleo Itajubá</div>
-        <div style="font-size: 0.88rem; opacity: 0.75;">Conectando ao banco de dados em tempo real…</div>
-        <div style="width: 40px; height: 40px; border: 4px solid rgba(255,255,255,0.2);
-                    border-top-color: #ffffff; border-radius: 50%;
+             style="width: 64px; height: 64px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(59,130,246,0.5); box-shadow: 0 0 20px rgba(59,130,246,0.3);" alt="Logo">
+        <div style="font-size: 1.1rem; font-weight: 700; letter-spacing: -0.2px;">Crea-Jr Núcleo Itajubá</div>
+        <div style="font-size: 0.85rem; color: #94a3b8;">Conectando ao banco de dados em tempo real…</div>
+        <div style="width: 36px; height: 36px; border: 3px solid rgba(255,255,255,0.1);
+                    border-top-color: #3b82f6; border-radius: 50%;
                     animation: spin 0.8s linear infinite;"></div>
         <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
     </div>
